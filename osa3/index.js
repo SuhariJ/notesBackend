@@ -1,6 +1,10 @@
+require('dotenv').config()
 const express = require('express')
 const app = express()
 const cors = require('cors')
+const mongoose = require('mongoose')
+const Note = require('./models/note.js')
+
 
 //Middlewaret
 const requestLogger = (request, response, next) => {
@@ -46,17 +50,16 @@ app.get('/', (request, response) => {
 })
 
 app.get('/api/notes', (request, response) => {
-  response.json(notes)
+  Note.find({}).then(result => {
+    response.json(result)
+  })
 })
 
 app.get('/api/notes/:id', (request, response) => {
     const id = request.params.id
-    const note = notes.find(note => note.id === id)
-    if(note){
-        response.json(note)
-    }else {
-        response.status(404).end()
-    }
+    Note.findById(id).then(note => {
+      response.json(note)
+    })
   })
 
   app.post('/api/notes', (request,response) =>{
@@ -69,13 +72,14 @@ app.get('/api/notes/:id', (request, response) => {
       })
     }
 
-    const note = {
+    const note = new Note({
       content: body.content,
       important: body.important || false,
       id: generateId()
-    }
-    notes = notes.concat(note)
-    response.json(note)
+    })
+    note.save().then(savedNote => {
+      response.json(savedNote)
+    })
   })
 
   app.delete('/api/notes/:id', (request, response) => {
@@ -94,7 +98,7 @@ app.get('/api/notes/:id', (request, response) => {
     return String(maxId + 1)
   }
 
-const PORT = process.env.PORT || 3001
+const PORT = process.env.PORT 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`)
 })
